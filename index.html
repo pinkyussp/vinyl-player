@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>Vinyl · Spotify</title>
+<style>
+  :root{
+    --bg:#f6f5f2;
+    --surface:#ffffff;
+    --surface-2:#efeee9;
+    --line:#e4e2dc;
+    --ink:#16161a;
+    --ink-2:#55555f;
+    --ink-3:#8a8a94;
+    --accent:#1db954;
+    --accent-ink:#0b5a2a;
+    --danger:#b42318;
+    --radius:16px;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.45 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden}
+  [hidden]{display:none!important}
+  button,input{font:inherit;color:inherit}
+  button{background:none;border:0;padding:0;cursor:pointer}
+  button:disabled{opacity:.4;cursor:default}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:8px}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .ellipsis{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .muted{color:var(--ink-2)}
+  .faint{color:var(--ink-3)}
+  .tabular{font-variant-numeric:tabular-nums}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;
+    height:48px;padding:0 22px;border-radius:999px;font-weight:600;
+    background:var(--ink);color:#fff;transition:transform .15s,background .15s}
+  .btn:hover:not(:disabled){background:#2c2c33}
+  .btn:active:not(:disabled){transform:scale(.98)}
+  .btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .btn-ghost:hover:not(:disabled){background:var(--surface-2)}
+  .btn-spotify{background:var(--accent);color:#04200d;height:54px;padding:0 28px;font-size:16px}
+  .btn-spotify:hover:not(:disabled){background:#1ed760}
+
+  #login-screen{min-height:100%;display:grid;place-items:center;
+    padding:max(24px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left))}
+  .login-card{width:min(440px,100%);text-align:center;display:flex;flex-direction:column;align-items:center;gap:20px}
+  .login-disc{width:160px;height:160px;border-radius:50%;position:relative;margin-bottom:8px;
+    background:repeating-radial-gradient(circle closest-side,#0d0d10 0 1.5px,#22222a 2.5px,#0d0d10 3.5px);
+    box-shadow:0 26px 50px rgba(0,0,0,.22);animation:spin 6s linear infinite}
+  .login-disc::after{content:"";position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;
+    border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#e5e3dc);box-shadow:inset 0 0 0 1px #cfccc3}
+  .login-card h1{margin:0;font-size:clamp(28px,5vw,36px);letter-spacing:-.02em;line-height:1.15;text-wrap:balance}
+  .login-card p{margin:0;max-width:34ch;color:var(--ink-2);text-wrap:balance}
+  .login-note{font-size:13px;color:var(--ink-3)}
+  .notice{width:100%;padding:12px 16px;border-radius:12px;background:#fff7e0;color:#6b4a00;border:1px solid #f0d58a;text-align:left;font-size:14px}
+  .notice.error{background:#fdeceb;color:var(--danger);border-color:#f5c2be}
+
+  #player-screen{min-height:100%;padding-bottom:40px}
+  .topbar{position:sticky;top:0;z-index:5;background:rgba(246,245,242,.92);backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line);
+    padding:14px max(20px,env(safe-area-inset-left)) 14px max(20px,env(safe-area-inset-right))}
+  .topbar-inner{max-width:1200px;margin:0 auto;display:flex;gap:16px;align-items:center}
+  .brand{font-weight:700;letter-spacing:-.01em;font-size:18px;margin-right:auto;white-space:nowrap}
+  .search{position:relative;flex:0 1 420px;min-width:0}
+  .search input{width:100%;height:44px;border-radius:999px;border:1px solid var(--line);
+    background:var(--surface);padding:0 18px 0 44px;outline:none}
+  .search input:focus{border-color:var(--ink);box-shadow:0 0 0 3px rgba(22,22,26,.08)}
+  .search svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:18px;height:18px;fill:none;stroke:var(--ink-3);stroke-width:2}
+
+  .layout{max-width:1200px;margin:0 auto;padding:28px max(20px,env(safe-area-inset-right)) 0 max(20px,env(safe-area-inset-left));
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,380px);gap:40px;align-items:start}
+  .content{min-width:0}
+  .section-title{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin:0 0 14px;font-weight:600}
+  .section{margin-bottom:36px}
+
+  .playlists{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:18px}
+  .playlist{text-align:left;background:var(--surface);border-radius:var(--radius);padding:12px;
+    border:1px solid var(--line);transition:transform .15s,box-shadow .15s;min-width:0}
+  .playlist:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.06)}
+  .playlist img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;background:var(--surface-2);display:block;margin-bottom:12px}
+  .playlist .t{font-weight:600}
+  .playlist .s{font-size:13px;color:var(--ink-3);margin-top:2px}
+
+  .results{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+  .track{width:100%;display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:14px;align-items:center;
+    padding:8px 10px;border-radius:12px;text-align:left}
+  .track:hover{background:var(--surface)}
+  .track.is-current{background:var(--surface);box-shadow:inset 3px 0 0 var(--accent)}
+  .track img{width:48px;height:48px;border-radius:8px;object-fit:cover;background:var(--surface-2)}
+  .track .n{font-weight:600}
+  .track .a{font-size:13px;color:var(--ink-3)}
+
+  .empty{padding:36px 20px;border:1px dashed var(--line);border-radius:var(--radius);text-align:center;color:var(--ink-2)}
+  .skeleton{background:linear-gradient(90deg,var(--surface-2) 25%,#f8f7f4 50%,var(--surface-2) 75%);background-size:200% 100%;
+    animation:shimmer 1.4s linear infinite;border-radius:12px}
+  @keyframes shimmer{to{background-position:-200% 0}}
+
+  .deck{position:sticky;top:96px;display:grid;gap:18px;justify-items:center;
+    grid-template-areas:"stage" "info" "progress" "controls" "volume"}
+  .stage{grid-area:stage;position:relative;width:min(340px,80vw);aspect-ratio:1/1}
+  .vinyl{position:absolute;inset:0;border-radius:50%;width:100%;height:100%;display:block;cursor:pointer}
+  .disc{position:absolute;inset:0;border-radius:50%;
+    background:
+      radial-gradient(circle closest-side,transparent 0 60%,rgba(255,255,255,.05) 68%,transparent 78%),
+      repeating-radial-gradient(circle closest-side,#0c0c0f 0 1.5px,#1f1f26 2.5px,#0c0c0f 3.5px);
+    box-shadow:0 30px 60px -20px rgba(0,0,0,.45),inset 0 0 0 1px #1a1a20;
+    animation:spin 2.4s linear infinite;animation-play-state:paused;will-change:transform}
+  .deck.is-playing .disc{animation-play-state:running}
+  .sheen{position:absolute;inset:0;border-radius:50%;pointer-events:none;
+    background:conic-gradient(from 0deg,transparent 0deg,rgba(255,255,255,.14) 22deg,transparent 58deg,
+      transparent 180deg,rgba(255,255,255,.1) 206deg,transparent 242deg);
+    animation:spin 5s linear infinite reverse;animation-play-state:paused}
+  .deck.is-playing .sheen{animation-play-state:running}
+  .label{position:absolute;left:50%;top:50%;width:38%;height:38%;margin:-19% 0 0 -19%;border-radius:50%;
+    overflow:hidden;background:radial-gradient(circle at 35% 30%,#fbfbf8,#e6e4dc);
+    box-shadow:inset 0 0 0 1px #cfccc3;display:grid;place-items:center}
+  .label img{width:100%;height:100%;object-fit:cover;display:block}
+  .label .stereo{font-size:10px;letter-spacing:.16em;font-weight:700;color:#555}
+  .label:not(.has-art) .stereo{display:block}
+  .label.has-art .stereo{display:none}
+  .hole{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;
+    background:var(--bg);box-shadow:inset 0 0 0 1px #c9c7bf;z-index:1}
+
+  .arm{position:absolute;top:-8%;right:-16%;width:10px;height:60%;pointer-events:none;
+    transform-origin:50% 0;transform:rotate(-16deg);transition:transform 1s cubic-bezier(.45,0,.25,1);z-index:2}
+  .deck.is-playing .arm{transform:rotate(26deg)}
+  .arm::before{content:"";position:absolute;left:50%;top:-18px;width:38px;height:38px;transform:translateX(-50%);
+    border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#bfc2ca 60%,#8c909a);box-shadow:0 5px 12px rgba(0,0,0,.22)}
+  .arm .rod{position:absolute;left:50%;top:0;bottom:46px;width:6px;transform:translateX(-50%);
+    background:linear-gradient(90deg,#8c909a,#eceef2 50%,#8c909a);border-radius:4px}
+  .arm .head{position:absolute;left:50%;bottom:26px;width:22px;height:30px;transform:translateX(-50%);
+    background:linear-gradient(#dde0e5,#8c909a);border-radius:4px 4px 6px 6px}
+
+  .info{grid-area:info;text-align:center;width:100%;min-width:0;max-width:340px}
+  .info .title{font-size:20px;font-weight:700;letter-spacing:-.01em;line-height:1.25}
+  .info .artist{color:var(--ink-2);margin-top:4px}
+  .info .hint{color:var(--ink-3);font-size:13px;margin-top:6px}
+
+  .progress{grid-area:progress;width:100%;max-width:340px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;font-size:12px;color:var(--ink-3)}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:20px;background:transparent;margin:0;cursor:pointer}
+  input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:linear-gradient(to right,var(--ink) var(--fill,0%),var(--line) var(--fill,0%))}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--ink);margin-top:-5px;border:0}
+  input[type=range]::-moz-range-track{height:4px;border-radius:4px;background:var(--line)}
+  input[type=range]::-moz-range-progress{height:4px;border-radius:4px;background:var(--ink)}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--ink);border:0}
+  input[type=range]:disabled{cursor:default;opacity:.4}
+
+  .controls{grid-area:controls;display:flex;align-items:center;gap:18px}
+  .ctl{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);transition:background .15s,transform .15s}
+  .ctl:hover:not(:disabled){background:var(--surface-2)}
+  .ctl:active:not(:disabled){transform:scale(.95)}
+  .ctl svg{width:22px;height:22px;fill:currentColor}
+  .ctl.primary{width:68px;height:68px;background:var(--ink);color:#fff;border-color:var(--ink)}
+  .ctl.primary:hover:not(:disabled){background:#2c2c33}
+  .ctl.primary svg{width:26px;height:26px}
+
+  .volume{grid-area:volume;display:flex;align-items:center;gap:10px;width:100%;max-width:260px;color:var(--ink-3);font-size:13px}
+  .volume svg{width:18px;height:18px;fill:currentColor;flex:none}
+
+  .toast{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translateX(-50%);
+    z-index:20;background:var(--ink);color:#fff;padding:12px 18px;border-radius:999px;font-size:14px;
+    box-shadow:0 12px 30px rgba(0,0,0,.25);max-width:calc(100vw - 40px);text-align:center;animation:rise .25s ease-out}
+  @keyframes rise{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  @media (max-width:860px){
+    .layout{grid-template-columns:minmax(0,1fr);gap:28px}
+    .deck{position:static;grid-template-columns:minmax(0,1fr) minmax(0,auto);
+      grid-template-areas:"info stage" "progress progress" "controls controls" "volume volume";
+      align-items:center;justify-items:stretch;gap:16px}
+    .deck .stage{width:min(56vw,260px);justify-self:end;margin-right:-6vw}
+    .deck .info{text-align:left;max-width:none;align-self:center}
+    .deck .progress{max-width:none}
+    .deck .controls{justify-content:center}
+    .deck .volume{max-width:none}
+    .topbar-inner{flex-wrap:wrap}
+    .brand{width:100%}
+    .search{flex:1 1 100%}
+  }
+  @media (prefers-reduced-motion:reduce){ .sheen{display:none} }
+</style>
+</head>
+<body>
+
+<section id="login-screen" hidden aria-labelledby="login-title">
+  <div class="login-card">
+    <div class="login-disc" aria-hidden="true"></div>
+    <h1 id="login-title">Your music, on a record player</h1>
+    <p>Log in with Spotify to search songs, browse your playlists and play them here.</p>
+    <button id="login-btn" class="btn btn-spotify" type="button">Log in with Spotify</button>
+    <p class="login-note">Playing music in the browser needs a Spotify Premium account.</p>
+    <div id="login-notice" class="notice" hidden role="alert"></div>
+  </div>
+</section>
+
+<section id="player-screen" hidden>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">Vinyl</div>
+      <form id="search-form" class="search" role="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        <input id="q" type="search" placeholder="Search songs" aria-label="Search songs" autocomplete="off">
+      </form>
+      <button id="logout-btn" class="btn btn-ghost" type="button" style="height:44px;padding:0 18px">Log out</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <main class="content">
+      <div id="notice" class="notice" hidden role="status" style="margin-bottom:24px"></div>
+
+      <section id="results-sec" class="section" hidden aria-labelledby="results-title">
+        <h2 id="results-title" class="section-title">Results</h2>
+        <p id="results-status" class="muted" style="margin:0 0 12px"></p>
+        <ol id="results" class="results"></ol>
+      </section>
+
+      <section class="section" aria-labelledby="pl-title">
+        <h2 id="pl-title" class="section-title">Your playlists</h2>
+        <div id="playlists" class="playlists" aria-live="polite">
+          <div class="skeleton" style="height:200px"></div>
+          <div class="skeleton" style="height:200px"></div>
+          <div class="skeleton" style="height:200px"></div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="deck" id="deck" aria-label="Player">
+      <div class="stage">
+        <button id="vinyl" class="vinyl" type="button" aria-label="Play or pause">
+          <div id="disc" class="disc" style="position:absolute;inset:0"></div>
+        </button>
+        <div id="sheen" class="sheen" aria-hidden="true" style="position:absolute;inset:0;pointer-events:none"></div>
+        <div id="label" class="label" aria-hidden="true">
+          <img id="art" alt="" hidden>
+          <span class="stereo">STEREO</span>
+        </div>
+        <div class="hole" aria-hidden="true"></div>
+        <div class="arm" aria-hidden="true"><div class="rod"></div><div class="head"></div></div>
+      </div>
+
+      <div class="info">
+        <div id="title" class="title ellipsis">Nothing playing</div>
+        <div id="artist" class="artist ellipsis">Pick a playlist or search for a song</div>
+        <div id="hint" class="hint">Connecting player…</div>
+      </div>
+
+      <div class="progress">
+        <span id="tcur" class="tabular">0:00</span>
+        <input id="seek" type="range" min="0" max="1000" value="0" aria-label="Seek" disabled>
+        <span id="tdur" class="tabular">0:00</span>
+      </div>
+
+      <div class="controls">
+        <button id="prev" class="ctl" type="button" aria-label="Previous track" disabled></button>
+        <button id="toggle" class="ctl primary" type="button" aria-label="Play" disabled></button>
+        <button id="next" class="ctl" type="button" aria-label="Next track" disabled></button>
+      </div>
+
+      <div class="volume">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9v6h4l5 4V5L9 9H5z"/></svg>
+        <input id="vol" type="range" min="0" max="100" value="60" aria-label="Volume" disabled>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+const CLIENT_ID = '7e5eaba2084d4c428a4f27b144ccdeff';
+const TOKEN_KEY = 'sp_tokens_v4';
+const SCOPES = [
+  'streaming','user-read-email','user-read-private',
+  'user-read-playback-state','user-modify-playback-state',
+  'user-read-currently-playing','playlist-read-private','user-library-read'
+].join(' ');
+const REDIRECT_URI = location.origin + location.pathname;
+
+const ICON = {
+  play:  '<path d="M8 5v14l11-7z"/>',
+  pause: '<path d="M6 19h4V5H6zm8-14v14h4V5z"/>',
+  prev:  '<path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/>',
+  next:  '<path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>'
+};
+
+const $ = id => document.getElementById(id);
+const svg = p => `<svg viewBox="0 0 24 24" aria-hidden="true">${p}</svg>`;
+const fmt = ms => { const s = Math.floor((ms || 0) / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+let toastTimer;
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.hidden = true, 3800);
+}
+function notice(msg, { error = false } = {}) {
+  const n = $('notice');
+  n.textContent = msg || '';
+  n.hidden = !msg;
+  n.classList.toggle('error', error);
+}
+function loginNotice(msg) {
+  const n = $('login-notice');
+  n.textContent = msg || '';
+  n.hidden = !msg;
+}
+
+const b64url = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const rand = n => { const a = new Uint8Array(n); crypto.getRandomValues(a); return b64url(a); };
+async function challenge(v) { return b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v))); }
+
+async function login() {
+  if (CLIENT_ID.startsWith('YOUR_')) { loginNotice('Paste your Spotify Client ID into CLIENT_ID at the top of this file.'); return; }
+  if (location.protocol === 'file:') { loginNotice('Open this page through the local server (see the setup note in the file). Double-clicking it will not log in.'); return; }
+  try {
+    const verifier = rand(64), state = rand(16);
+    sessionStorage.setItem('sp_verifier', verifier);
+    sessionStorage.setItem('sp_state', state);
+    const q = new URLSearchParams({
+      client_id: CLIENT_ID, response_type: 'code', redirect_uri: REDIRECT_URI,
+      scope: SCOPES, state, code_challenge_method: 'S256', code_challenge: await challenge(verifier)
+    });
+    $('login-btn').disabled = true;
+    $('login-btn').textContent = 'Opening Spotify…';
+    location.href = 'https://accounts.spotify.com/authorize?' + q;
+  } catch (e) {
+    loginNotice('Login could not start: ' + e.message);
+  }
+}
+
+function logout() {
+  localStorage.removeItem(TOKEN_KEY);
+  location.reload();
+}
+
+async function requestToken(body) {
+  const old = JSON.parse(localStorage.getItem(TOKEN_KEY) || 'null');
+  const r = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body
+  });
+  if (!r.ok) throw new Error('Could not sign in to Spotify (' + r.status + '). Try logging in again.');
+  const j = await r.json();
+  const t = { access: j.access_token, refresh: j.refresh_token || old?.refresh, exp: Date.now() + j.expires_in * 1000 - 60000 };
+  localStorage.setItem(TOKEN_KEY, JSON.stringify(t));
+  return t;
+}
+
+async function handleRedirect() {
+  const p = new URLSearchParams(location.search);
+  if (!p.has('code') && !p.has('error')) return;
+  history.replaceState(null, '', location.pathname);
+  if (p.has('error')) throw new Error('Login was cancelled.');
+  if (p.get('state') !== sessionStorage.getItem('sp_state')) throw new Error('Login check failed. Please try again.');
+  await requestToken(new URLSearchParams({
+    grant_type: 'authorization_code', code: p.get('code'),
+    redirect_uri: REDIRECT_URI, client_id: CLIENT_ID,
+    code_verifier: sessionStorage.getItem('sp_verifier')
+  }));
+  sessionStorage.removeItem('sp_verifier');
+  sessionStorage.removeItem('sp_state');
+}
+
+async function getAccess() {
+  let t = JSON.parse(localStorage.getItem(TOKEN_KEY) || 'null');
+  if (!t) return null;
+  if (Date.now() > t.exp) {
+    t = await requestToken(new URLSearchParams({ grant_type: 'refresh_token', refresh_token: t.refresh, client_id: CLIENT_ID }));
+  }
+  return t.access;
+}
+
+async function api(path, { method = 'GET', body, query } = {}) {
+  const access = await getAccess();
+  if (!access) throw new Error('Please log in again.');
+  const url = new URL('https://api.spotify.com/v1' + path);
+  if (query) Object.entries(query).forEach(([k, v]) => v != null && url.searchParams.set(k, v));
+  const r = await fetch(url, {
+    method,
+    headers: { Authorization: 'Bearer ' + access, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (r.status === 204) return null;
+  if (!r.ok) {
+    const msg = (await r.json().catch(() => ({}))).error?.message;
+    throw new Error(msg || ('Spotify error ' + r.status));
+  }
+  return r.json();
+}
+
+let player = null, deviceId = null, sdkLoaded = false;
+let st = { paused: true, track: null, pos: 0, dur: 0, at: 0 };
+let seeking = false;
+const sdkReady = new Promise(res => { window.onSpotifyWebPlaybackSDKReady = res; });
+
+function loadSDK() {
+  if (sdkLoaded) return;
+  sdkLoaded = true;
+  const s = document.createElement('script');
+  s.src = 'https://sdk.scdn.co/spotify-player.js';
+  s.onerror = () => { setHint('Could not load the player. Check your connection.'); notice('Could not load the Spotify player script.', { error: true }); };
+  document.head.append(s);
+}
+
+async function initPlayer() {
+  await sdkReady;
+  player = new Spotify.Player({
+    name: 'Vinyl',
+    getOAuthToken: cb => getAccess().then(cb),
+    volume: 0.6
+  });
+
+  const slow = setTimeout(() => {
+    setHint('Still connecting…');
+    notice('The player is taking a while. Playback may not work with this account or browser.', { error: true });
+  }, 15000);
+
+  player.addListener('ready', ({ device_id }) => {
+    clearTimeout(slow);
+    deviceId = device_id;
+    notice('');
+    setControlsEnabled(true);
+    setHint('Ready. Pick a song to play.');
+    player.getVolume().then(v => $('vol').value = Math.round(v * 100));
+  });
+  player.addListener('not_ready', () => { deviceId = null; setControlsEnabled(false); setHint('Player disconnected. Reconnecting…'); });
+  player.addListener('player_state_changed', s => { if (s) applyState(s); });
+  player.addListener('initialization_error', e => fail(e.message));
+  player.addListener('authentication_error', e => fail('Session problem: ' + e.message + '. Try logging out and in again.'));
+  player.addListener('account_error', () => {
+    setHint('Playback needs Spotify Premium.');
+    notice('Playback needs Spotify Premium. You can still search and browse songs.', { error: true });
+  });
+  player.addListener('playback_error', e => toast('Playback error: ' + e.message));
+
+  setupMediaSession();
+  await player.connect();
+}
+
+function fail(msg) { setHint('Player error'); notice('Player error: ' + msg, { error: true }); }
+function setHint(msg) { $('hint').textContent = msg; }
+
+function setControlsEnabled(on) {
+  ['prev','toggle','next','seek','vol'].forEach(id => $(id).disabled = !on);
+}
+
+function applyState(s) {
+  st = {
+    paused: s.paused,
+    track: s.track_window.current_track,
+    pos: s.position,
+    dur: s.duration,
+    at: performance.now()
+  };
+  render();
+}
+
+function render() {
+  const t = st.track;
+  const hasTrack = !!t;
+  const playing = hasTrack && !st.paused;
+
+  $('deck').classList.toggle('is-playing', playing);
+  $('title').textContent = hasTrack ? t.name : 'Nothing playing';
+  $('artist').textContent = hasTrack ? t.artists.map(a => a.name).join(', ') : 'Pick a playlist or search for a song';
+  if (hasTrack && deviceId) setHint(st.paused ? 'Paused' : 'Now playing');
+
+  const img = t?.album?.images?.[0]?.url;
+  const art = $('art');
+  const label = $('label');
+  if (img) {
+    if (art.getAttribute('src') !== img) art.setAttribute('src', img);
+    art.hidden = false;
+    label.classList.add('has-art');
+  } else {
+    art.removeAttribute('src');
+    art.hidden = true;
+    label.classList.remove('has-art');
+  }
+
+  $('toggle').innerHTML = svg(st.paused ? ICON.play : ICON.pause);
+  $('toggle').setAttribute('aria-label', st.paused ? 'Play' : 'Pause');
+  $('prev').innerHTML = svg(ICON.prev);
+  $('next').innerHTML = svg(ICON.next);
+
+  highlightCurrent();
+  updateProgress();
+
+  if ('mediaSession' in navigator && hasTrack) {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: t.name,
+      artist: t.artists.map(a => a.name).join(', '),
+      album: t.album?.name || '',
+      artwork: (t.album?.images || []).map(i => ({ src: i.url, sizes: `${i.width || 640}x${i.height || 640}`, type: 'image/jpeg' }))
+    });
+    navigator.mediaSession.playbackState = st.paused ? 'paused' : 'playing';
+  }
+}
+
+function currentPos() {
+  return st.paused ? st.pos : Math.min(st.dur || Infinity, st.pos + (performance.now() - st.at));
+}
+
+function updateProgress() {
+  const pos = currentPos(), dur = st.dur || 0;
+  $('tcur').textContent = fmt(pos);
+  $('tdur').textContent = fmt(dur);
+  if (!seeking) {
+    const v = dur ? Math.min(1000, (pos / dur) * 1000) : 0;
+    $('seek').value = v;
+    $('seek').style.setProperty('--fill', (v / 10) + '%');
+  }
+}
+setInterval(updateProgress, 250);
+
+function highlightCurrent() {
+  const id = st.track?.uri;
+  document.querySelectorAll('.track').forEach(b => b.classList.toggle('is-current', !!id && b.dataset.uri === id));
+}
+
+function setupMediaSession() {
+  if (!('mediaSession' in navigator)) return;
+  const m = navigator.mediaSession;
+  const on = (a, fn) => { try { m.setActionHandler(a, fn); } catch (_) {} };
+  on('play', () => player?.resume());
+  on('pause', () => player?.pause());
+  on('previoustrack', () => player?.previousTrack());
+  on('nexttrack', () => player?.nextTrack());
+  on('seekto', d => player?.seek(d.seekTime * 1000));
+}
+
+$('vinyl').onclick = () => player?.togglePlay();
+$('toggle').onclick = () => player?.togglePlay();
+$('next').onclick = () => player?.nextTrack();
+$('prev').onclick = () => player?.previousTrack();
+$('seek').addEventListener('input', e => { seeking = true; e.target.style.setProperty('--fill', (e.target.value / 10) + '%'); });
+$('seek').addEventListener('change', e => {
+  seeking = false;
+  if (player && st.dur) player.seek((e.target.value / 1000) * st.dur);
+});
+$('vol').addEventListener('input', e => {
+  e.target.style.setProperty('--fill', e.target.value + '%');
+  player?.setVolume(e.target.value / 100);
+});
+
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input, textarea, select, [contenteditable]')) return;
+  if (!player || $('player-screen').hidden) return;
+  if (e.code === 'Space') { e.preventDefault(); player.togglePlay(); }
+  if (e.code === 'ArrowRight') player.seek(Math.min(st.dur, currentPos() + 5000));
+  if (e.code === 'ArrowLeft') player.seek(Math.max(0, currentPos() - 5000));
+});
+
+async function play(fn) {
+  if (!deviceId) { toast(player ? 'The player is still starting. Try again in a moment.' : 'Log in to play music.'); return; }
+  try { await fn(deviceId); }
+  catch (e) { toast(e.message); }
+}
+
+async function loadPlaylists() {
+  const box = $('playlists');
+  try {
+    const data = await api('/me/playlists', { query: { limit: 50 } });
+    const items = (data.items || []).filter(Boolean);
+    box.replaceChildren();
+    if (!items.length) {
+      box.append(el('div', 'empty', 'No playlists found. Search for a song above to start listening.'));
+      return;
+    }
+    items.forEach(p => {
+      const b = el('button', 'playlist');
+      b.type = 'button';
+      const img = el('img');
+      img.alt = '';
+      img.loading = 'lazy';
+      const url = p.images?.[0]?.url;
+      if (url) img.src = url;
+      b.append(img, el('div', 't ellipsis', p.name || 'Untitled'), el('div', 's ellipsis', p.owner?.display_name || ''));
+      b.setAttribute('aria-label', `Play playlist ${p.name || 'Untitled'}`);
+      b.onclick = () => play(id => api('/me/player/play', { method: 'PUT', query: { device_id: id }, body: { context_uri: p.uri } }));
+      box.append(b);
+    });
+  } catch (e) {
+    box.replaceChildren(el('div', 'empty', 'Could not load your playlists: ' + e.message));
+  }
+}
+
+let searchTimer;
+$('q').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => search(e.target.value.trim()), 350);
+});
+$('search-form').addEventListener('submit', e => {
+  e.preventDefault();
+  clearTimeout(searchTimer);
+  search($('q').value.trim());
+});
+
+function trackRow(t, i, list) {
+  const li = document.createElement('li');
+  const b = el('button', 'track');
+  b.type = 'button';
+  b.dataset.uri = t.uri;
+  const img = el('img');
+  img.alt = '';
+  img.loading = 'lazy';
+  if (t.album?.images?.[0]?.url) img.src = t.album.images[0].url;
+  const meta = el('div');
+  meta.style.minWidth = '0';
+  meta.append(el('div', 'n ellipsis', t.name), el('div', 'a ellipsis', (t.artists || []).map(a => a.name).join(', ')));
+  b.append(img, meta, el('span', 'faint tabular', fmt(t.duration_ms)));
+  b.setAttribute('aria-label', `Play ${t.name}`);
+  b.onclick = () => play(id => api('/me/player/play', {
+    method: 'PUT', query: { device_id: id },
+    body: { uris: list.map(x => x.uri), offset: { position: i } }
+  }));
+  li.append(b);
+  return li;
+}
+
+async function search(q) {
+  const sec = $('results-sec'), ol = $('results'), status = $('results-status');
+  if (!q) { sec.hidden = true; ol.replaceChildren(); return; }
+  sec.hidden = false;
+  status.textContent = 'Searching…';
+  ol.replaceChildren();
+  try {
+    const data = await api('/search', { query: { q, type: 'track', limit: 10 } });
+    const items = (data.tracks?.items || []).filter(Boolean);
+    if (!items.length) { status.textContent = `No songs found for “${q}”. Try a different spelling.`; return; }
+    status.textContent = `${items.length} songs for “${q}”`;
+    items.forEach((t, i) => ol.append(trackRow(t, i, items)));
+    highlightCurrent();
+  } catch (e) {
+    status.textContent = 'Search failed: ' + e.message;
+  }
+}
+
+function showLogin() {
+  $('player-screen').hidden = true;
+  $('login-screen').hidden = false;
+  $('login-btn').onclick = login;
+  document.title = 'Log in · Vinyl';
+}
+
+function showPlayer() {
+  $('login-screen').hidden = true;
+  $('player-screen').hidden = false;
+  $('logout-btn').onclick = logout;
+  document.title = 'Vinyl';
+  render();
+}
+
+(async function main() {
+  $('login-btn').onclick = login;
+  try { await handleRedirect(); }
+  catch (e) { loginNotice(e.message); }
+
+  if (!localStorage.getItem(TOKEN_KEY)) { showLogin(); return; }
+
+  showPlayer();
+  loadSDK();
+  initPlayer().catch(e => fail(e.message));
+  loadPlaylists();
+})();
+</script>
+</body>
+</html>
