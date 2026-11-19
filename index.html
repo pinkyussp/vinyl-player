@@ -10,8 +10,8 @@
 <meta name="apple-mobile-web-app-title" content="Vinyl">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.json">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="512x512" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
 <title>Vinyl</title>
 <style>
   :root{
@@ -81,21 +81,25 @@
   .ctl.primary:hover:not(:disabled){background:#2c2c33}
   .ctl.primary svg{width:26px;height:26px}
 
-  .stage{position:relative;width:max(220px,min(78vw,calc(100dvh - 300px),520px));aspect-ratio:1/1;max-width:100%}
+  .stage{position:relative;isolation:isolate;width:max(220px,min(78vw,calc(100dvh - 300px),520px));aspect-ratio:1/1;max-width:100%}
+  .stage::before{content:"";position:absolute;inset:-12%;border-radius:50%;z-index:-1;pointer-events:none;
+    background:radial-gradient(closest-side,rgba(29,185,84,.28),rgba(29,185,84,0) 72%);opacity:.3;transition:opacity 1s ease}
+  .deck.is-playing .stage::before{opacity:1}
   .vinyl{position:absolute;inset:0;border-radius:50%;width:100%;height:100%;display:block;cursor:pointer}
   .disc{position:absolute;inset:0;border-radius:50%;
     background:
-      radial-gradient(circle closest-side,transparent 0 60%,rgba(255,255,255,.05) 68%,transparent 78%),
-      repeating-radial-gradient(circle closest-side,#0c0c0f 0 1.5px,#1f1f26 2.5px,#0c0c0f 3.5px);
-    box-shadow:0 30px 60px -20px rgba(0,0,0,.45),inset 0 0 0 1px #1a1a20;
+      radial-gradient(circle closest-side,transparent 0 44%,rgba(255,255,255,.06) 46%,transparent 48%,transparent 100%),
+      repeating-radial-gradient(circle closest-side,rgba(255,255,255,0) 0 1.6px,rgba(255,255,255,.045) 2.2px 2.6px,rgba(0,0,0,.4) 3.2px 4px),
+      radial-gradient(circle closest-side,#1c1c24 0%,#0c0c10 62%,#16161d 100%);
+    box-shadow:0 0 0 1px #050507,0 0 0 7px #17171e,0 0 0 8px rgba(255,255,255,.06),0 40px 70px -26px rgba(18,18,40,.6);
     animation:spin 2.4s linear infinite;animation-play-state:paused;will-change:transform}
   .deck.is-playing .disc{animation-play-state:running}
   .sheen{position:absolute;inset:0;border-radius:50%;pointer-events:none;
-    background:conic-gradient(from 0deg,transparent 0deg,rgba(255,255,255,.14) 22deg,transparent 58deg,transparent 180deg,rgba(255,255,255,.1) 206deg,transparent 242deg);
+    background:conic-gradient(from 0deg,transparent 0deg,rgba(255,255,255,.12) 18deg,transparent 52deg,transparent 180deg,rgba(255,255,255,.08) 204deg,transparent 236deg);
     animation:spin 5s linear infinite reverse;animation-play-state:paused}
   .deck.is-playing .sheen{animation-play-state:running}
-  .label{position:absolute;left:50%;top:50%;width:38%;height:38%;margin:-19% 0 0 -19%;border-radius:50%;overflow:hidden;
-    background:radial-gradient(circle at 35% 30%,#fbfbf8,#e6e4dc);box-shadow:inset 0 0 0 1px #cfccc3;display:grid;place-items:center}
+  .label{position:absolute;left:50%;top:50%;width:36%;height:36%;margin:-18% 0 0 -18%;border-radius:50%;overflow:hidden;
+    background:radial-gradient(circle at 35% 30%,#fbfbf8,#e6e4dc);box-shadow:0 0 0 3px #0b0b0f,0 0 0 4px rgba(255,255,255,.08);display:grid;place-items:center;z-index:1}
   .label img{width:100%;height:100%;object-fit:cover;display:block}
   .label .stereo{font-size:10px;letter-spacing:.16em;font-weight:700;color:#555}
   .label:not(.has-art) .stereo{display:block}
@@ -147,6 +151,26 @@
   .toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:20;background:var(--ink);color:#fff;padding:12px 18px;border-radius:999px;font-size:14px;box-shadow:0 12px 30px rgba(0,0,0,.25);max-width:calc(100vw - 40px);text-align:center;animation:rise .25s ease-out}
   @keyframes rise{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
   @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ---- polish ---- */
+  #player-view{background:radial-gradient(90% 60% at 50% 38%,#ffffff 0%,var(--bg) 72%)}
+  .ctl{box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .ctl.primary{box-shadow:0 12px 26px -10px rgba(22,22,26,.55)}
+  .ctl.primary:active:not(:disabled){transform:scale(.95)}
+  .tab{position:relative;transition:color .2s}
+  .tab[aria-pressed=true] svg{stroke:var(--accent)}
+  .tab[aria-pressed=true]::after{content:"";position:absolute;top:0;left:50%;width:28px;height:3px;margin-left:-14px;border-radius:0 0 3px 3px;background:var(--accent)}
+  .nowbar #title{color:var(--ink)}
+  input[type=range]:focus-visible{outline:none}
+  .track,.playlist{transition:background .15s,transform .15s,box-shadow .15s}
+  .track:active{transform:scale(.99)}
+  .playlist:active{transform:scale(.98)}
+  .playlist .t{letter-spacing:-.01em}
+  .section h2{display:flex;align-items:center;gap:10px}
+  .section h2::after{content:"";flex:1;height:1px;background:var(--line)}
+  .pl-title{font-size:clamp(20px,4vw,26px);font-weight:700;display:block}
+  .pl-title::after{display:none}
+  @media (prefers-reduced-motion:reduce){ .disc,.sheen,.login-disc{animation-duration:12s} }
 
   @media (max-width:700px){
     .controls{gap:12px}
