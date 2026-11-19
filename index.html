@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
+<meta name="theme-color" content="#f6f5f2">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Vinyl">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Vinyl</title>
 <style>
   :root{
@@ -131,6 +139,10 @@
   .skeleton{background:linear-gradient(90deg,var(--surface-2) 25%,#f8f7f4 50%,var(--surface-2) 75%);background-size:200% 100%;animation:shimmer 1.4s linear infinite;border-radius:12px;height:190px}
   @keyframes shimmer{to{background-position:-200% 0}}
   #status{margin:0 0 16px}
+  .pl-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  .pl-meta{flex:1 1 200px;min-width:0}
+  .pl-title{margin:0;font-size:22px;letter-spacing:-.01em;text-transform:none;color:var(--ink)}
+  #pl-sub{font-size:13px;margin-top:2px}
 
   .toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:20;background:var(--ink);color:#fff;padding:12px 18px;border-radius:999px;font-size:14px;box-shadow:0 12px 30px rgba(0,0,0,.25);max-width:calc(100vw - 40px);text-align:center;animation:rise .25s ease-out}
   @keyframes rise{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
@@ -206,6 +218,18 @@
     <section id="results-sec" class="section" hidden>
       <h2>Results</h2>
       <ol id="results" class="rows"></ol>
+    </section>
+
+    <section id="playlist-sec" class="section" hidden>
+      <div class="pl-head">
+        <button id="pl-back" class="btn btn-ghost" type="button">← Back</button>
+        <div class="pl-meta">
+          <h2 id="pl-title" class="pl-title ellipsis"></h2>
+          <div id="pl-sub" class="muted ellipsis"></div>
+        </div>
+        <button id="pl-play" class="btn" type="button">Play all</button>
+      </div>
+      <ol id="pl-tracks" class="rows"></ol>
     </section>
 
     <div id="library">
@@ -557,6 +581,52 @@ function trackRow(t, i, list) {
   return li;
 }
 
+let currentPl = null;
+
+async function loadPlaylistTracks(id) {
+  let data;
+  try {
+    data = await api(`/playlists/${id}/items`, { query: { limit: 50 } });
+  } catch (e) {
+    data = await api(`/playlists/${id}/tracks`, { query: { limit: 50 } });
+  }
+  return (data.items || []).map(i => i.item || i.track).filter(t => t && t.uri && t.type !== 'episode');
+}
+
+async function openPlaylist(p) {
+  currentPl = p;
+  $('library').hidden = true;
+  $('results-sec').hidden = true;
+  status('');
+  $('playlist-sec').hidden = false;
+  $('pl-title').textContent = p.name || 'Untitled';
+  $('pl-sub').textContent = p.owner?.display_name || '';
+  const ol = $('pl-tracks');
+  ol.replaceChildren(el('li', 'empty', 'Loading songs…'));
+  window.scrollTo(0, 0);
+  try {
+    const tracks = await loadPlaylistTracks(p.id);
+    if (currentPl !== p) return;
+    ol.replaceChildren();
+    if (!tracks.length) {
+      ol.append(el('li', 'empty', 'This playlist has no songs yet.'));
+      return;
+    }
+    tracks.forEach((t, i) => ol.append(trackRow(t, i, tracks)));
+    highlightCurrent();
+  } catch (e) {
+    if (currentPl === p) ol.replaceChildren(el('li', 'empty', 'Could not load this playlist: ' + e.message));
+  }
+}
+
+function closePlaylist() {
+  currentPl = null;
+  $('playlist-sec').hidden = true;
+  $('library').hidden = false;
+}
+$('pl-back').onclick = closePlaylist;
+$('pl-play').onclick = () => { if (currentPl) playContext(currentPl.uri); };
+
 async function loadPlaylists() {
   const box = $('playlists');
   try {
@@ -576,7 +646,7 @@ async function loadPlaylists() {
       if (p.images?.[0]?.url) img.src = p.images[0].url;
       b.append(img, el('div', 't ellipsis', p.name || 'Untitled'), el('div', 's ellipsis', p.owner?.display_name || ''));
       b.setAttribute('aria-label', `Play playlist ${p.name || 'Untitled'}`);
-      b.onclick = () => playContext(p.uri);
+      b.onclick = () => openPlaylist(p);
       box.append(b);
     });
   } catch (e) {
@@ -654,6 +724,12 @@ function showApp() {
   document.title = 'Vinyl';
   render();
   showView('player');
+}
+
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
 }
 
 (async function main() {
