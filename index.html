@@ -13,7 +13,7 @@
     color-scheme:light;
   }
   *{box-sizing:border-box}
-  html,body{height:100%}
+  html,body{height:100%;overflow-x:hidden;max-width:100%}
   body{margin:0;background:var(--bg);color:var(--ink);
     font:15px/1.45 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
     -webkit-font-smoothing:antialiased;overflow-x:hidden}
@@ -47,13 +47,16 @@
   .login-note{font-size:13px;color:var(--ink-3)}
   .notice{width:100%;padding:12px 16px;border-radius:12px;background:#fdeceb;color:var(--danger);border:1px solid #f5c2be;text-align:left;font-size:14px}
 
-  #player-view{min-height:calc(100vh - 76px);min-height:calc(100dvh - 76px);display:flex;align-items:center;
-    padding:24px max(20px,env(safe-area-inset-right)) 24px max(20px,env(safe-area-inset-left))}
-  .deck{width:100%;max-width:1040px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:32px;align-items:center}
-  .side{display:grid;gap:20px;min-width:0;max-width:440px}
-  .info .title{font-size:clamp(22px,4vw,30px);font-weight:700;letter-spacing:-.02em;line-height:1.2}
-  .info .artist{color:var(--ink-2);margin-top:6px;font-size:16px}
-  .progress{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;font-size:12px;color:var(--ink-3)}
+  #player-view{min-height:calc(100dvh - 64px);display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:24px max(20px,env(safe-area-inset-right,0px)) 150px max(20px,env(safe-area-inset-left,0px))}
+  .deck{width:100%;display:flex;flex-direction:column;align-items:center;gap:28px}
+  .nowbar{position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom,0px));z-index:9;display:grid;gap:4px;
+    background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-top:1px solid var(--line);
+    padding:8px max(20px,env(safe-area-inset-right,0px)) 10px max(20px,env(safe-area-inset-left,0px))}
+  .now-text{display:flex;align-items:baseline;gap:8px;min-width:0}
+  .now-text #title{font-weight:700;font-size:14px;flex:0 1 auto;max-width:55%;min-width:0}
+  .now-text #artist{color:var(--ink-2);font-size:13px;flex:1 1 0;min-width:0}
+  .progress{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;font-size:11px;color:var(--ink-3)}
   input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:20px;background:transparent;margin:0;cursor:pointer}
   input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:linear-gradient(to right,var(--ink) var(--fill,0%),var(--line) var(--fill,0%))}
   input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--ink);margin-top:-5px;border:0}
@@ -70,7 +73,7 @@
   .ctl.primary:hover:not(:disabled){background:#2c2c33}
   .ctl.primary svg{width:26px;height:26px}
 
-  .stage{position:relative;width:min(380px,44vw);aspect-ratio:1/1;justify-self:end}
+  .stage{position:relative;width:max(220px,min(78vw,calc(100dvh - 300px),520px));aspect-ratio:1/1;max-width:100%}
   .vinyl{position:absolute;inset:0;border-radius:50%;width:100%;height:100%;display:block;cursor:pointer}
   .disc{position:absolute;inset:0;border-radius:50%;
     background:
@@ -90,7 +93,7 @@
   .label:not(.has-art) .stereo{display:block}
   .label.has-art .stereo{display:none}
   .hole{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--bg);box-shadow:inset 0 0 0 1px #c9c7bf;z-index:1}
-  .arm{position:absolute;top:-8%;right:-16%;width:10px;height:60%;pointer-events:none;transform-origin:50% 0;transform:rotate(-16deg);transition:transform 1s cubic-bezier(.45,0,.25,1);z-index:2}
+  .arm{position:absolute;top:-6%;right:-6%;width:10px;height:60%;pointer-events:none;transform-origin:50% 0;transform:rotate(-16deg);transition:transform 1s cubic-bezier(.45,0,.25,1);z-index:2}
   .deck.is-playing .arm{transform:rotate(26deg)}
   .arm::before{content:"";position:absolute;left:50%;top:-18px;width:38px;height:38px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#bfc2ca 60%,#8c909a);box-shadow:0 5px 12px rgba(0,0,0,.22)}
   .arm .rod{position:absolute;left:50%;top:0;bottom:46px;width:6px;transform:translateX(-50%);background:linear-gradient(90deg,#8c909a,#eceef2 50%,#8c909a);border-radius:4px}
@@ -134,9 +137,6 @@
   @keyframes spin{to{transform:rotate(360deg)}}
 
   @media (max-width:700px){
-    .deck{grid-template-columns:minmax(0,1fr) auto;gap:16px}
-    .stage{width:min(58vw,260px);margin-right:-10vw}
-    .side{max-width:none}
     .controls{gap:12px}
     .ctl{width:48px;height:48px}
     .ctl.primary{width:62px;height:62px}
@@ -160,22 +160,6 @@
 <div id="app" hidden>
   <section id="player-view" aria-label="Player">
     <div class="deck" id="deck">
-      <div class="side">
-        <div class="info">
-          <div id="title" class="title ellipsis">Nothing playing</div>
-          <div id="artist" class="artist ellipsis"></div>
-        </div>
-        <div class="progress">
-          <span id="tcur" class="tabular">0:00</span>
-          <input id="seek" type="range" min="0" max="1000" value="0" aria-label="Seek" disabled>
-          <span id="tdur" class="tabular">0:00</span>
-        </div>
-        <div class="controls">
-          <button id="prev" class="ctl" type="button" aria-label="Previous track" disabled></button>
-          <button id="toggle" class="ctl primary" type="button" aria-label="Play" disabled></button>
-          <button id="next" class="ctl" type="button" aria-label="Next track" disabled></button>
-        </div>
-      </div>
       <div class="stage">
         <button id="vinyl" class="vinyl" type="button" aria-label="Play or pause">
           <div id="disc" class="disc" style="position:absolute;inset:0"></div>
@@ -188,8 +172,25 @@
         <div class="hole" aria-hidden="true"></div>
         <div class="arm" aria-hidden="true"><div class="rod"></div><div class="head"></div></div>
       </div>
+      <div class="controls">
+        <button id="prev" class="ctl" type="button" aria-label="Previous track" disabled></button>
+        <button id="toggle" class="ctl primary" type="button" aria-label="Play" disabled></button>
+        <button id="next" class="ctl" type="button" aria-label="Next track" disabled></button>
+      </div>
     </div>
   </section>
+
+  <div id="nowbar" class="nowbar" aria-label="Now playing">
+    <div class="now-text">
+      <span id="title" class="ellipsis">Nothing playing</span>
+      <span id="artist" class="ellipsis"></span>
+    </div>
+    <div class="progress">
+      <span id="tcur" class="tabular">0:00</span>
+      <input id="seek" type="range" min="0" max="1000" value="0" aria-label="Seek" disabled>
+      <span id="tdur" class="tabular">0:00</span>
+    </div>
+  </div>
 
   <section id="music-view" aria-label="Music" hidden>
     <div class="music-head">
@@ -507,6 +508,7 @@ function showView(name) {
   const onPlayer = name === 'player';
   $('player-view').hidden = !onPlayer;
   $('music-view').hidden = onPlayer;
+  $('nowbar').hidden = !onPlayer;
   $('tab-player').setAttribute('aria-pressed', String(onPlayer));
   $('tab-music').setAttribute('aria-pressed', String(!onPlayer));
   window.scrollTo(0, 0);
